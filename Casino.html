@@ -141,7 +141,7 @@ function spinRoulette(colorBet, player, betAmount){
   return new Promise(res=>{
     const targetIdx=Math.floor(Math.random()*segments.length);
     const totalRotation=2*Math.PI*8+targetIdx*(2*Math.PI/segments.length);
-    anime({targets:{rot:0}, rot:totalRotation, easing:'easeOutCubic', duration:3500, update:function(a){drawWheel(a.animations[0].currentValue);}, complete:function(){res(segments[targetIdx].color===colorBet);}});
+    anime({targets:{rot:0}, rot:totalRotation, easing:'easeOutCubic', duration:3500, update:function(a){drawWheel(a.animations[0].currentValue);}, complete:function(){res(segments[targetIdx].color.toLowerCase() === colorBet.toLowerCase());}});
   });
 }
 
