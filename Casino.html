@@ -63,57 +63,47 @@ canvas {width:100%;height:auto;border-radius:12px;margin-top:10px;}
   <div class="game-card" id="wheelCard" style="display:none;">
     <canvas id="rouletteWheel"></canvas>
   </div>
-
-  <div class="game-card" id="blackjackCard" style="display:none;">
-    <canvas id="blackjackCanvas"></canvas>
-    <div style="margin-top:10px;">
-      <button id="hitBtn" disabled>Hit</button>
-      <button id="standBtn" disabled>Stand</button>
-    </div>
-  </div>
 </main>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 <script>
 // ---------- Utilities ----------
-const resultDiv = document.getElementById('result');
-const historyDiv = document.getElementById('history');
-const wheelCard = document.getElementById('wheelCard');
-const colorChoice = document.getElementById('colorChoice');
-const rouletteCanvas = document.getElementById('rouletteWheel');
-const ctx = rouletteCanvas.getContext('2d');
-const owner = document.getElementById('ownerName').textContent;
-const blackjackCard = document.getElementById('blackjackCard');
-const bjCanvas = document.getElementById('blackjackCanvas');
-const bjCtx = bjCanvas.getContext('2d');
-const hitBtn = document.getElementById('hitBtn');
-const standBtn = document.getElementById('standBtn');
-const gameSelect = document.getElementById('gameSelect');
+const resultDiv=document.getElementById('result');
+const historyDiv=document.getElementById('history');
+const wheelCard=document.getElementById('wheelCard');
+const colorChoice=document.getElementById('colorChoice');
+const rouletteCanvas=document.getElementById('rouletteWheel');
+const ctx=rouletteCanvas.getContext('2d');
+const gameSelect=document.getElementById('gameSelect');
 
 function resizeCanvas(canvas){
-  canvas.width = canvas.offsetWidth;
-  canvas.height = canvas.offsetWidth; // square for wheel
+  canvas.width=canvas.offsetWidth;
+  canvas.height=canvas.offsetWidth; // square for wheel
 }
-window.addEventListener('resize',()=>{resizeCanvas(rouletteCanvas); drawWheel(); resizeCanvas(bjCanvas); renderBlackjack();});
+window.addEventListener('resize',()=>{resizeCanvas(rouletteCanvas); drawWheel(0);});
 resizeCanvas(rouletteCanvas);
-resizeCanvas(bjCanvas);
 
 // ---------- Confetti ----------
 function fireConfetti(){confetti({particleCount:100,spread:70,origin:{y:0.6}});}
 
-// ---------- Roulette ----------
+// ---------- Roulette Wheel ----------
 const segments=[{color:'red',label:'1'},{color:'black',label:'2'},{color:'red',label:'3'},{color:'black',label:'4'},{color:'green',label:'0'}];
+
 function drawWheel(rotation=0){
-  const cx=rouletteCanvas.width/2,cy=rouletteCanvas.height/2,radius=cx-10;
-  ctx.clearRect(0,0,rouletteCanvas.width,rouletteCanvas.height);
+  const cx=rouletteCanvas.width/2;
+  const cy=rouletteCanvas.height/2;
+  const radius=cx-10;
   const arc=(2*Math.PI)/segments.length;
+  ctx.clearRect(0,0,rouletteCanvas.width,rouletteCanvas.height);
+
   segments.forEach((seg,i)=>{
     ctx.beginPath();
     ctx.moveTo(cx,cy);
     ctx.arc(cx,cy,radius,i*arc+rotation,(i+1)*arc+rotation);
     ctx.fillStyle=seg.color;
     ctx.fill();
+
     ctx.save();
     ctx.translate(cx,cy);
     ctx.rotate(i*arc+arc/2+rotation);
@@ -123,6 +113,7 @@ function drawWheel(rotation=0){
     ctx.fillText(seg.label,radius-10,6);
     ctx.restore();
   });
+
   // Gray arrow
   ctx.beginPath();
   ctx.moveTo(cx-12,12);
@@ -132,33 +123,42 @@ function drawWheel(rotation=0){
   ctx.fill();
 }
 
-// ---------- Roulette Spin ----------
-function spinRoulette(colorBet, player, betAmount){
+// ---------- Spin Wheel ----------
+function spinRoulette(colorBet){
   return new Promise(res=>{
-    const targetIdx=Math.floor(Math.random()*segments.length);
-    const totalRotation=2*Math.PI*8+targetIdx*(2*Math.PI/segments.length);
-    anime({targets:{rot:0}, rot:totalRotation, easing:'easeOutCubic', duration:3500, update:function(a){drawWheel(a.animations[0].currentValue);}, complete:function(){res(segments[targetIdx].color===colorBet);}});
+    const targetIndex=Math.floor(Math.random()*segments.length);
+    const spins=8;
+    const totalRotation=spins*2*Math.PI + targetIndex*(2*Math.PI/segments.length);
+
+    anime({
+      targets:{rot:0},
+      rot:totalRotation,
+      easing:'easeOutCubic',
+      duration:3500,
+      update:anim=>drawWheel(anim.animations[0].currentValue),
+      complete:()=>res(segments[targetIndex].color===colorBet)
+    });
   });
 }
 
 // ---------- Game select ----------
 gameSelect.addEventListener('change',()=>{
-  if(gameSelect.value==='roulette'){ wheelCard.style.display='block'; colorChoice.style.display='block'; blackjackCard.style.display='none'; drawWheel(); }
-  else if(gameSelect.value==='blackjack'){ blackjackCard.style.display='block'; wheelCard.style.display='none'; colorChoice.style.display='none'; }
-  else{ wheelCard.style.display='none'; colorChoice.style.display='none'; blackjackCard.style.display='none'; }
+  if(gameSelect.value==='roulette'){ wheelCard.style.display='block'; colorChoice.style.display='block'; drawWheel(0);}
+  else{ wheelCard.style.display='none'; colorChoice.style.display='none';}
 });
 
 // ---------- Play Button ----------
-document.getElementById('playBtn').addEventListener('click', async ()=>{
+document.getElementById('playBtn').addEventListener('click',async()=>{
   const player=document.getElementById('playerName').value.trim();
   const betAmount=parseInt(document.getElementById('betAmount').value);
-  if(!player || isNaN(betAmount)||betAmount<1){ resultDiv.className='lose'; resultDiv.textContent='Enter valid player and bet'; return;}
+  if(!player||isNaN(betAmount)||betAmount<1){ resultDiv.className='lose'; resultDiv.textContent='Enter valid player and bet'; return;}
   const game=gameSelect.value;
+
   resultDiv.className=''; resultDiv.textContent='Playing...';
 
   if(game==='roulette'){
     const colorBet=document.getElementById('colorBet').value;
-    const won=await spinRoulette(colorBet,player,betAmount);
+    const won=await spinRoulette(colorBet);
     if(won){ resultDiv.className='win'; resultDiv.innerHTML=`🎉 WIN! /pay ${player} ${betAmount*2}`; fireConfetti(); historyDiv.innerHTML=`${player} won ${betAmount*2}<br>`+historyDiv.innerHTML;}
     else{ resultDiv.className='lose'; resultDiv.innerHTML=`💀 LOSE! Do NOT pay the player`; historyDiv.innerHTML=`${player} lost ${betAmount}<br>`+historyDiv.innerHTML;}
   }
