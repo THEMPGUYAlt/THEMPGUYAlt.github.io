@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>tt_toastie’s DonutSMP Casino Helper</title>
+<style>
+  body {margin:0;font-family:Poppins,sans-serif;background:#120005;color:#fff;display:flex;flex-direction:column;align-items:center;min-height:100vh;}
+  header {width:100%;padding:15px 10px;text-align:center;background:#22000a;}
+  h1 {margin:0;color:#ffd700;text-shadow:0 0 8px #ffae00;}
+  .owner {margin-top:4px;color:#00ffcc;font-weight:700;}
+  main {width:100%;max-width:1200px;padding:10px;display:flex;flex-wrap:wrap;gap:15px;justify-content:center;}
+  .game-card {background:rgba(255,255,255,0.05);padding:15px;border-radius:10px;flex:1 1 320px;min-width:280px;position:relative;}
+  input, select {padding:6px 10px;border-radius:6px;border:none;margin:4px 0;width:100%;}
+  button {background:linear-gradient(90deg,#ffd700,#ffae00);border:none;padding:8px 14px;border-radius:8px;font-weight:800;cursor:pointer;margin-top:6px;width:100%;}
+  #result {margin-top:12px;font-weight:700;color:#00ff66;word-break:break-word;}
+  canvas {width:100%;height:auto;border-radius:10px;margin-top:10px;}
+  .history {margin-top:10px;font-size:0.85rem;color:#ccc;max-height:150px;overflow-y:auto;}
+  .confetti-piece {position:absolute;width:8px;height:8px;background:gold;border-radius:50%;pointer-events:none;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🎰 tt_toastie’s DonutSMP Casino Helper</h1>
+  <div class="owner">Owner: <span id="ownerName">robisrobot</span> (Casino Owner IGN)</div>
+</header>
+
+<main>
+  <div class="game-card">
+    <label>Player Name</label>
+    <input id="playerName" placeholder="Minecraft Username">
+
+    <label>Bet Amount</label>
+    <input id="betAmount" type="number" placeholder="Amount" min="1">
+
+    <label>Select Game</label>
+    <select id="gameSelect">
+      <option value="wheel">🎡 Wheel</option>
+      <option value="coin">🪙 Coin Flip</option>
+      <option value="dice">🎲 Dice</option>
+      <option value="slot">🎰 Slots</option>
+      <option value="blackjack">🃏 Blackjack</option>
+    </select>
+
+    <button id="playBtn">Play / Spin</button>
+    <div id="result"></div>
+    <div class="history" id="history"></div>
+  </div>
+
+  <div class="game-card" id="wheelCard">
+    <canvas id="wheelCanvas" width="400" height="400"></canvas>
+  </div>
+</main>
+
+<script>
+// ----------- Utilities ----------
+const resultDiv = document.getElementById('result');
+const historyDiv = document.getElementById('history');
+const wheelCanvas = document.getElementById('wheelCanvas');
+const wheelCtx = wheelCanvas.getContext('2d');
+const wheelSegments = 8;
+const wheelLabels = ['WIN','LOSE','WIN','LOSE','WIN','LOSE','WIN','LOSE'];
+const wheelColors = ['#00ff66','#ff3333'];
+const owner = document.getElementById('ownerName').textContent;
+
+// Confetti system
+function createConfetti(){
+  for(let i=0;i<50;i++){
+    const c = document.createElement('div');
+    c.classList.add('confetti-piece');
+    c.style.left=Math.random()*window.innerWidth+'px';
+    c.style.top='-10px';
+    document.body.appendChild(c);
+    animateConfetti(c);
+  }
+}
+function animateConfetti(el){
+  let posY = -10;
+  const speed = 2+Math.random()*3;
+  const sway = Math.random()*2*Math.PI;
+  function frame(){
+    posY+=speed;
+    el.style.top=posY+'px';
+    el.style.left=(parseFloat(el.style.left)+Math.sin(posY/10+sway)*2)+'px';
+    if(posY<window.innerHeight){requestAnimationFrame(frame)}
+    else{el.remove();}
+  }
+  frame();
+}
+
+// ----------- Wheel ----------
+function drawWheel(rotation=0){
+  const cx=wheelCanvas.width/2,cy=wheelCanvas.height/2,radius=cx-5;
+  wheelCtx.clearRect(0,0,wheelCanvas.width,wheelCanvas.height);
+  const arc = (2*Math.PI)/wheelSegments;
+  for(let i=0;i<wheelSegments;i++){
+    wheelCtx.beginPath();
+    wheelCtx.moveTo(cx,cy);
+    wheelCtx.arc(cx,cy,radius,i*arc+rotation,i*arc+arc+rotation);
+    wheelCtx.closePath();
+    wheelCtx.fillStyle = wheelColors[i%2];
+    wheelCtx.fill();
+    wheelCtx.save();
+    wheelCtx.translate(cx,cy);
+    wheelCtx.rotate(i*arc+arc/2+rotation);
+    wheelCtx.textAlign='right';
+    wheelCtx.fillStyle='gold';
+    wheelCtx.font='bold 16px sans-serif';
+    wheelCtx.fillText(wheelLabels[i], radius-10,6);
+    wheelCtx.restore();
+  }
+  // center
+  wheelCtx.beginPath();
+  wheelCtx.arc(cx,cy,50,0,2*Math.PI);
+  wheelCtx.fillStyle='gold';
+  wheelCtx.fill();
+}
+drawWheel();
+
+// ----------- Slots ----------
+function spinSlots(){
+  return new Promise(resolve=>{
+    const symbols=['🍒','🍋','🔔','⭐','💎'];
+    const reels = [0,0,0];
+    let count=0;
+    const interval = setInterval(()=>{
+      reels[0]=symbols[Math.floor(Math.random()*symbols.length)];
+      reels[1]=symbols[Math.floor(Math.random()*symbols.length)];
+      reels[2]=symbols[Math.floor(Math.random()*symbols.length)];
+      resultDiv.innerHTML=`🎰 ${reels.join(' | ')}`;
+      count++;
+      if(count>15){clearInterval(interval);resolve(reels);}
+    },80);
+  });
+}
+
+// ----------- Coin ----------
+function flipCoin(){
+  return new Promise(resolve=>{
+    let count=0;
+    const interval = setInterval(()=>{
+      resultDiv.textContent = (Math.random()<0.5?'🪙 Heads':'🪙 Tails');
+      count++;
+      if(count>10){clearInterval(interval);resolve(Math.random()<0.5);}
+    },80);
+  });
+}
+
+// ----------- Dice ----------
+function rollDice(){
+  return new Promise(resolve=>{
+    let count=0;
+    const interval = setInterval(()=>{
+      const val = Math.floor(Math.random()*6)+1;
+      resultDiv.textContent=`🎲 Dice: ${val}`;
+      count++;
+      if(count>10){clearInterval(interval);resolve(val>=4);}
+    },80);
+  });
+}
+
+// ----------- Blackjack ----------
+function playBlackjack(){
+  return new Promise(resolve=>{
+    const playerVal = Math.floor(Math.random()*11)+11;
+    const dealerVal = Math.floor(Math.random()*11)+11;
+    resultDiv.textContent=`🃏 Blackjack: Player ${playerVal} vs Dealer ${dealerVal}`;
+    setTimeout(()=>resolve(playerVal>dealerVal && playerVal<=21),800);
+  });
+}
+
+// ----------- Wheel Spin Animation ----------
+function spinWheelAnimation(){
+  return new Promise(resolve=>{
+    const targetIdx = Math.floor(Math.random()*wheelSegments);
+    let rotation = 0;
+    const totalRotation = 2*Math.PI*5 + targetIdx*(2*Math.PI/wheelSegments);
+    const duration=2000;
+    const start = performance.now();
+    function animate(time){
+      let progress = (time-start)/duration;
+      if(progress>1) progress=1;
+      rotation = totalRotation*progress;
+      drawWheel(rotation);
+      if(progress<1) requestAnimationFrame(animate);
+      else resolve(wheelLabels[targetIdx]==='WIN');
+    }
+    requestAnimationFrame(animate);
+  });
+}
+
+// ----------- Main Game Logic ----------
+document.getElementById('playBtn').addEventListener('click',async()=>{
+  const player = document.getElementById('playerName').value.trim();
+  let bet = parseInt(document.getElementById('betAmount').value);
+  if(!player || isNaN(bet) || bet<1){ resultDiv.style.color='red'; resultDiv.textContent='Enter valid player and bet'; return;}
+  const game = document.getElementById('gameSelect').value;
+
+  resultDiv.style.color='#00ffcc';
+  resultDiv.textContent='Playing...';
+  let won=false;
+
+  if(game==='wheel'){ won = await spinWheelAnimation();}
+  else if(game==='coin'){ won = await flipCoin();}
+  else if(game==='dice'){ won = await rollDice();}
+  else if(game==='slot'){ 
+    const reels = await spinSlots();
+    won = (reels[0]===reels[1] && reels[1]===reels[2]);
+  }
+  else if(game==='blackjack'){ won = await playBlackjack();}
+
+  if(won){
+    resultDiv.style.color='#00ff66';
+    resultDiv.innerHTML=`🎉 WIN! Use this command to pay the player:<br><code>/pay ${player} ${bet*2}</code>`;
+    createConfetti();
+    historyDiv.innerHTML=`${player} won ${bet*2}<br>` + historyDiv.innerHTML;
+  } else{
+    resultDiv.style.color='#ff3333';
+    resultDiv.innerHTML=`💀 LOSE! Do NOT pay the player.`;
+    historyDiv.innerHTML=`${player} lost ${bet}<br>` + historyDiv.innerHTML;
+  }
+});
+</script>
+
+</body>
+</html>
