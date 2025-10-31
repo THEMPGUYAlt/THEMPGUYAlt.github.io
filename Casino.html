@@ -1,22 +1,22 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>tt_toastie’s DonutSMP Casino Helper</title>
 <style>
-  body {margin:0;font-family:Poppins,sans-serif;background:#120005;color:#fff;display:flex;flex-direction:column;align-items:center;min-height:100vh;}
-  header {width:100%;padding:15px 10px;text-align:center;background:#22000a;}
-  h1 {margin:0;color:#ffd700;text-shadow:0 0 8px #ffae00;}
-  .owner {margin-top:4px;color:#00ffcc;font-weight:700;}
-  main {width:100%;max-width:1200px;padding:10px;display:flex;flex-wrap:wrap;gap:15px;justify-content:center;}
-  .game-card {background:rgba(255,255,255,0.05);padding:15px;border-radius:10px;flex:1 1 320px;min-width:280px;position:relative;}
-  input, select {padding:6px 10px;border-radius:6px;border:none;margin:4px 0;width:100%;}
-  button {background:linear-gradient(90deg,#ffd700,#ffae00);border:none;padding:8px 14px;border-radius:8px;font-weight:800;cursor:pointer;margin-top:6px;width:100%;}
-  #result {margin-top:12px;font-weight:700;color:#00ff66;word-break:break-word;}
-  canvas {width:100%;height:auto;border-radius:10px;margin-top:10px;}
-  .history {margin-top:10px;font-size:0.85rem;color:#ccc;max-height:150px;overflow-y:auto;}
-  .confetti-piece {position:absolute;width:8px;height:8px;background:gold;border-radius:50%;pointer-events:none;}
+body {margin:0;font-family:Poppins,sans-serif;background:#120005;color:#fff;display:flex;flex-direction:column;align-items:center;min-height:100vh;}
+header {width:100%;padding:15px 10px;text-align:center;background:#22000a;}
+h1 {margin:0;color:#ffd700;text-shadow:0 0 8px #ffae00;}
+.owner {margin-top:4px;color:#00ffcc;font-weight:700;}
+main {width:100%;max-width:1200px;padding:10px;display:flex;flex-wrap:wrap;gap:15px;justify-content:center;}
+.game-card {background:rgba(255,255,255,0.05);padding:15px;border-radius:10px;flex:1 1 320px;min-width:280px;position:relative;}
+input, select {padding:6px 10px;border-radius:6px;border:none;margin:4px 0;width:100%;}
+button {background:linear-gradient(90deg,#ffd700,#ffae00);border:none;padding:8px 14px;border-radius:8px;font-weight:800;cursor:pointer;margin-top:6px;width:100%;}
+#result {margin-top:12px;font-weight:700;color:#00ff66;word-break:break-word;}
+canvas {width:100%;height:auto;border-radius:10px;margin-top:10px;}
+.history {margin-top:10px;font-size:0.85rem;color:#ccc;max-height:150px;overflow-y:auto;}
+.confetti-piece {position:absolute;width:8px;height:8px;background:gold;border-radius:50%;pointer-events:none;}
 </style>
 </head>
 <body>
@@ -54,7 +54,7 @@
 </main>
 
 <script>
-// ----------- Utilities ----------
+// ---------- Utilities ----------
 const resultDiv = document.getElementById('result');
 const historyDiv = document.getElementById('history');
 const wheelCanvas = document.getElementById('wheelCanvas');
@@ -64,7 +64,7 @@ const wheelLabels = ['WIN','LOSE','WIN','LOSE','WIN','LOSE','WIN','LOSE'];
 const wheelColors = ['#00ff66','#ff3333'];
 const owner = document.getElementById('ownerName').textContent;
 
-// Confetti system
+// Confetti animation
 function createConfetti(){
   for(let i=0;i<50;i++){
     const c = document.createElement('div');
@@ -89,7 +89,7 @@ function animateConfetti(el){
   frame();
 }
 
-// ----------- Wheel ----------
+// ---------- Wheel ----------
 function drawWheel(rotation=0){
   const cx=wheelCanvas.width/2,cy=wheelCanvas.height/2,radius=cx-5;
   wheelCtx.clearRect(0,0,wheelCanvas.width,wheelCanvas.height);
@@ -110,7 +110,6 @@ function drawWheel(rotation=0){
     wheelCtx.fillText(wheelLabels[i], radius-10,6);
     wheelCtx.restore();
   }
-  // center
   wheelCtx.beginPath();
   wheelCtx.arc(cx,cy,50,0,2*Math.PI);
   wheelCtx.fillStyle='gold';
@@ -118,7 +117,7 @@ function drawWheel(rotation=0){
 }
 drawWheel();
 
-// ----------- Slots ----------
+// ---------- Slots ----------
 function spinSlots(){
   return new Promise(resolve=>{
     const symbols=['🍒','🍋','🔔','⭐','💎'];
@@ -135,7 +134,7 @@ function spinSlots(){
   });
 }
 
-// ----------- Coin ----------
+// ---------- Coin ----------
 function flipCoin(){
   return new Promise(resolve=>{
     let count=0;
@@ -147,7 +146,7 @@ function flipCoin(){
   });
 }
 
-// ----------- Dice ----------
+// ---------- Dice ----------
 function rollDice(){
   return new Promise(resolve=>{
     let count=0;
@@ -160,7 +159,7 @@ function rollDice(){
   });
 }
 
-// ----------- Blackjack ----------
+// ---------- Blackjack ----------
 function playBlackjack(){
   return new Promise(resolve=>{
     const playerVal = Math.floor(Math.random()*11)+11;
@@ -170,7 +169,7 @@ function playBlackjack(){
   });
 }
 
-// ----------- Wheel Spin Animation ----------
+// ---------- Wheel Spin Animation ----------
 function spinWheelAnimation(){
   return new Promise(resolve=>{
     const targetIdx = Math.floor(Math.random()*wheelSegments);
@@ -190,7 +189,7 @@ function spinWheelAnimation(){
   });
 }
 
-// ----------- Main Game Logic ----------
+// ---------- Main Game Logic ----------
 document.getElementById('playBtn').addEventListener('click',async()=>{
   const player = document.getElementById('playerName').value.trim();
   let bet = parseInt(document.getElementById('betAmount').value);
