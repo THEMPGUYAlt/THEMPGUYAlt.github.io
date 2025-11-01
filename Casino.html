@@ -3,8 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>tt_toastie’s DonutSMP Casino Helper</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<title>DonutSMP Casino Helper</title>
 <style>
 body {
   margin:0;
@@ -26,13 +25,48 @@ header {
 h1 { margin:0; color:#fff; text-shadow:0 0 8px #ff00ff,0 0 12px #6600ff; }
 .owner { margin-top:4px; color:#00ffcc; font-weight:700; }
 main { width:100%; max-width:1200px; padding:10px; display:flex; flex-wrap:wrap; gap:15px; justify-content:center; }
-.game-card { background:rgba(255,255,255,0.05); padding:15px; border-radius:12px; flex:1 1 320px; min-width:280px; position:relative; box-shadow:0 0 20px rgba(0,0,0,0.4); transition:all 0.3s; }
-.game-card:hover{transform:scale(1.03);box-shadow:0 0 40px #ff00ff;}
-input, select { padding:6px 10px; border-radius:6px; border:none; margin:4px 0; width:100%; background:rgba(255,255,255,0.1); color:#fff; }
+.game-card {
+  background:rgba(255,255,255,0.05);
+  padding:15px;
+  border-radius:12px;
+  flex:1 1 320px;
+  min-width:280px;
+  position:relative;
+  box-shadow:0 0 20px rgba(0,0,0,0.4);
+  transition:all 0.3s;
+}
+.game-card:hover {transform:scale(1.03);box-shadow:0 0 40px #ff00ff;}
+input, select {
+  padding:6px 10px;
+  border-radius:6px;
+  border:none;
+  margin:4px 0;
+  width:100%;
+  background:rgba(255,255,255,0.1);
+  color:#fff;
+}
 input::placeholder{color:#ccc;}
-button { background:linear-gradient(90deg,#ffd700,#ffae00); border:none; padding:8px 14px; border-radius:10px; font-weight:800; cursor:pointer; margin-top:6px; width:100%; transition:all 0.2s; }
+button {
+  background:linear-gradient(90deg,#ffd700,#ffae00);
+  border:none;
+  padding:8px 14px;
+  border-radius:10px;
+  font-weight:800;
+  cursor:pointer;
+  margin-top:6px;
+  width:100%;
+  transition:all 0.2s;
+}
 button:hover{transform:scale(1.05);}
-#result { margin-top:12px; font-weight:800; word-break:break-word; padding:10px; border-radius:6px; text-align:center; font-size:1.1rem; }
+#result {
+  margin-top:12px;
+  font-weight:800;
+  word-break:break-word;
+  padding:10px;
+  border-radius:6px;
+  text-align:center;
+  font-size:1.1rem;
+}
 .win { background:linear-gradient(90deg,#00ff66,#00cc00); color:#000; text-shadow:0 0 6px #00ff66; }
 .lose { background:linear-gradient(90deg,#ff3333,#aa0000); color:#fff; text-shadow:0 0 6px #ff3333; }
 canvas { width:100%; height:auto; border-radius:12px; margin-top:10px; background: radial-gradient(circle at center, #2a002a 0%, #1b0d1b 100%); }
@@ -40,10 +74,9 @@ canvas { width:100%; height:auto; border-radius:12px; margin-top:10px; backgroun
 </style>
 </head>
 <body>
-
 <header>
-  <h1>🎰 tt_toastie’s DonutSMP Casino Helper</h1>
-  <div class="owner">Owner: <span id="ownerName">robisrobot</span> (Casino Owner IGN)</div>
+  <h1>🎰 DonutSMP Casino Helper</h1>
+  <div class="owner">Owner: <span id="ownerName">robisrobot</span></div>
 </header>
 
 <main>
@@ -76,54 +109,53 @@ canvas { width:100%; height:auto; border-radius:12px; margin-top:10px; backgroun
   <div class="game-card" id="wheelCard">
     <canvas id="rouletteWheel"></canvas>
   </div>
-
-  <div class="game-card" id="blackjackCard" style="display:none;">
-    <canvas id="blackjackCanvas"></canvas>
-    <div style="margin-top:10px;">
-      <button id="hitBtn" disabled>Hit</button>
-      <button id="standBtn" disabled>Stand</button>
-    </div>
-  </div>
 </main>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 <script>
+// Utils
 const resultDiv=document.getElementById('result');
 const historyDiv=document.getElementById('history');
 const wheelCard=document.getElementById('wheelCard');
 const colorChoice=document.getElementById('colorChoice');
 const rouletteCanvas=document.getElementById('rouletteWheel');
 const ctx=rouletteCanvas.getContext('2d');
-const blackjackCard=document.getElementById('blackjackCard');
-const bjCanvas=document.getElementById('blackjackCanvas');
-const bjCtx=bjCanvas.getContext('2d');
-const hitBtn=document.getElementById('hitBtn');
-const standBtn=document.getElementById('standBtn');
 const gameSelect=document.getElementById('gameSelect');
 
-let currentRotation=0; // track rotation for redraw
+let currentRotation=0;
 
 function resizeCanvas(canvas){
-  canvas.width = canvas.offsetWidth;
-  canvas.height = canvas.offsetWidth;
+  canvas.width=canvas.offsetWidth;
+  canvas.height=canvas.offsetWidth;
 }
-window.addEventListener('resize',()=>{
-  resizeCanvas(rouletteCanvas); drawWheel(currentRotation);
-  resizeCanvas(bjCanvas); renderBlackjack();
-});
+window.addEventListener('resize',()=>{resizeCanvas(rouletteCanvas); drawWheel(currentRotation);});
 resizeCanvas(rouletteCanvas);
-resizeCanvas(bjCanvas);
 
+// Confetti
 function fireConfetti(){confetti({particleCount:100,spread:70,origin:{y:0.6}});}
 
-// ---------- Roulette ----------
-const segments=[
-  {color:'red',label:'1'},
-  {color:'black',label:'2'},
-  {color:'red',label:'3'},
-  {color:'black',label:'4'},
-  {color:'green',label:'0'}
+// Roulette setup
+const segments=[ // more realistic 18 red / 18 black / 1 green
+  {color:'green',label:'0'},
+  {color:'red',label:'1'},{color:'black',label:'2'},
+  {color:'red',label:'3'},{color:'black',label:'4'},
+  {color:'red',label:'5'},{color:'black',label:'6'},
+  {color:'red',label:'7'},{color:'black',label:'8'},
+  {color:'red',label:'9'},{color:'black',label:'10'},
+  {color:'red',label:'11'},{color:'black',label:'12'},
+  {color:'red',label:'13'},{color:'black',label:'14'},
+  {color:'red',label:'15'},{color:'black',label:'16'},
+  {color:'red',label:'17'},{color:'black',label:'18'},
+  {color:'red',label:'19'},{color:'black',label:'20'},
+  {color:'red',label:'21'},{color:'black',label:'22'},
+  {color:'red',label:'23'},{color:'black',label:'24'},
+  {color:'red',label:'25'},{color:'black',label:'26'},
+  {color:'red',label:'27'},{color:'black',label:'28'},
+  {color:'red',label:'29'},{color:'black',label:'30'},
+  {color:'red',label:'31'},{color:'black',label:'32'},
+  {color:'red',label:'33'},{color:'black',label:'34'},
+  {color:'red',label:'35'},{color:'black',label:'36'}
 ];
 
 function drawWheel(rotation=0){
@@ -138,14 +170,14 @@ function drawWheel(rotation=0){
     ctx.arc(cx,cy,radius,i*arc+rotation,(i+1)*arc+rotation);
     ctx.fillStyle=seg.color;
     ctx.shadowColor="#fff";
-    ctx.shadowBlur=8;
+    ctx.shadowBlur=5;
     ctx.fill();
     ctx.save();
     ctx.translate(cx,cy);
     ctx.rotate(i*arc+arc/2+rotation);
     ctx.fillStyle='gold';
     ctx.textAlign='right';
-    ctx.font='bold 20px sans-serif';
+    ctx.font='bold 16px sans-serif';
     ctx.fillText(seg.label,radius-10,6);
     ctx.restore();
   });
@@ -166,13 +198,13 @@ function drawWheel(rotation=0){
   ctx.fill();
 }
 
-function rouletteWinCheck(finalRotation, colorBet){
+function rouletteWinCheck(finalRotation,colorBet){
   const arc=(2*Math.PI)/segments.length;
-  const idx=Math.floor(((2*Math.PI - (finalRotation % (2*Math.PI))) % (2*Math.PI)) / arc);
+  const idx=Math.floor(((2*Math.PI - (finalRotation%(2*Math.PI)))% (2*Math.PI))/arc);
   return segments[idx].color.toLowerCase()===colorBet.toLowerCase();
 }
 
-function spinRoulette(colorBet, player, betAmount){
+function spinRoulette(colorBet,player,betAmount){
   return new Promise(resolve=>{
     const targetIdx=Math.floor(Math.random()*segments.length);
     const totalRotation=2*Math.PI*8 + targetIdx*(2*Math.PI/segments.length);
@@ -187,82 +219,36 @@ function spinRoulette(colorBet, player, betAmount){
   });
 }
 
-// ---------- Other games (coin, dice, slots, blackjack) remain the same ----------
-async function flipCoin(player,betAmount){
-  let count=0;
-  return new Promise(res=>{
-    const interval=setInterval(()=>{
-      resultDiv.textContent=Math.random()<0.5?'🪙 Heads':'🪙 Tails';
-      count++;
-      if(count>10){clearInterval(interval);res(Math.random()<0.5);}
-    },80);
-  });
-}
-
-async function rollDice(player,betAmount){
-  let count=0;
-  return new Promise(res=>{
-    const interval=setInterval(()=>{
-      const val=Math.floor(Math.random()*6)+1;
-      resultDiv.textContent=`🎲 Dice: ${val}`;
-      count++;
-      if(count>10){clearInterval(interval);res(val>=4);}
-    },80);
-  });
-}
-
-async function spinSlots(player,betAmount){
-  const symbols=['🍒','🍋','🔔','⭐','💎'];
-  let reels=[0,0,0],count=0;
-  return new Promise(res=>{
-    const interval=setInterval(()=>{
-      reels=reels.map(()=>symbols[Math.floor(Math.random()*symbols.length)]);
-      resultDiv.innerHTML=`🎰 ${reels.join(' | ')}`;
-      count++;
-      if(count>15){clearInterval(interval);res(reels[0]===reels[1]&&reels[1]===reels[2]);}
-    },80);
-  });
-}
-
-function showResult(won, player, betAmount){
-  resultDiv.className='';
-  resultDiv.style.opacity=1;
-  if(won){
-    resultDiv.className='win';
-    resultDiv.innerHTML=`🎉 WIN! <br>Use this command:<br><b>/pay ${player} ${betAmount*2}</b>`;
-    fireConfetti();
-    anime({targets:resultDiv,scale:[0.8,1.2,1],duration:1000,easing:'easeOutElastic(1,.5)'});
-    historyDiv.innerHTML=`${player} won ${betAmount*2}<br>`+historyDiv.innerHTML;
-  } else {
-    resultDiv.className='lose';
-    resultDiv.innerHTML=`💀 LOSE! <br>Do NOT pay the player`;
-    anime({targets:resultDiv,rotate:[0,-10,10,-10,0],duration:800,easing:'easeInOutQuad'});
-    historyDiv.innerHTML=`${player} lost ${betAmount}<br>`+historyDiv.innerHTML;
-  }
-}
-
-// ---------- Play button ----------
+// Play button
 document.getElementById('playBtn').addEventListener('click', async ()=>{
   const player=document.getElementById('playerName').value.trim();
   const betAmount=parseInt(document.getElementById('betAmount').value);
   if(!player||isNaN(betAmount)||betAmount<1){resultDiv.className='lose';resultDiv.textContent='Enter valid player and bet';return;}
   const game=gameSelect.value;
   resultDiv.className='';resultDiv.textContent='Playing...';
-  if(game==='roulette'){const colorBet=document.getElementById('colorBet').value;const won=await spinRoulette(colorBet,player,betAmount);showResult(won,player,betAmount);}
-  else if(game==='coin'){const won=await flipCoin(player,betAmount);showResult(won,player,betAmount);}
-  else if(game==='dice'){const won=await rollDice(player,betAmount);showResult(won,player,betAmount);}
-  else if(game==='slot'){const won=await spinSlots(player,betAmount);showResult(won,player,betAmount);}
-  else if(game==='blackjack'){startBlackjack(player,betAmount);}
+  if(game==='roulette'){
+    const colorBet=document.getElementById('colorBet').value;
+    const won=await spinRoulette(colorBet,player,betAmount);
+    showResult(won,player,betAmount);
+  }
 });
 
-gameSelect.addEventListener('change',()=>{
-  if(gameSelect.value==='roulette'){ wheelCard.style.display='block'; colorChoice.style.display='block'; blackjackCard.style.display='none'; drawWheel(currentRotation);}
-  else if(gameSelect.value==='blackjack'){blackjackCard.style.display='block';wheelCard.style.display='none';colorChoice.style.display='none';}
-  else{wheelCard.style.display='none';colorChoice.style.display='none';blackjackCard.style.display='none';}
-});
+function showResult(won,player,betAmount){
+  resultDiv.className='';
+  if(won){
+    resultDiv.className='win';
+    resultDiv.innerHTML=`🎉 WIN! <br>Use this command:<br><b>/pay ${player} ${betAmount*2}</b>`;
+    fireConfetti();
+    historyDiv.innerHTML=`${player} won ${betAmount*2}<br>`+historyDiv.innerHTML;
+  }else{
+    resultDiv.className='lose';
+    resultDiv.innerHTML=`💀 LOSE! <br>Do NOT pay the player`;
+    historyDiv.innerHTML=`${player} lost ${betAmount}<br>`+historyDiv.innerHTML;
+  }
+}
 
-// ---------- Initial Wheel Display ----------
-if(gameSelect.value==='roulette'){wheelCard.style.display='block';colorChoice.style.display='block';blackjackCard.style.display='none';drawWheel(currentRotation);}
+// Initial draw
+drawWheel();
 </script>
 </body>
 </html>
