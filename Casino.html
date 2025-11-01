@@ -88,10 +88,6 @@ canvas { width:100%; height:auto; border-radius:12px; margin-top:10px; backgroun
     <label>Choose Game</label>
     <select id="gameSelect">
       <option value="roulette">🎡 Roulette Wheel</option>
-      <option value="coin">🪙 Coin Flip</option>
-      <option value="dice">🎲 Dice</option>
-      <option value="slot">🎰 Slots</option>
-      <option value="blackjack">🃏 Blackjack</option>
     </select>
     <div id="colorChoice" style="display:block;">
       <label>Choose Color</label>
@@ -117,12 +113,9 @@ canvas { width:100%; height:auto; border-radius:12px; margin-top:10px; backgroun
 // Utils
 const resultDiv=document.getElementById('result');
 const historyDiv=document.getElementById('history');
-const wheelCard=document.getElementById('wheelCard');
-const colorChoice=document.getElementById('colorChoice');
 const rouletteCanvas=document.getElementById('rouletteWheel');
 const ctx=rouletteCanvas.getContext('2d');
 const gameSelect=document.getElementById('gameSelect');
-
 let currentRotation=0;
 
 function resizeCanvas(canvas){
@@ -135,35 +128,15 @@ resizeCanvas(rouletteCanvas);
 // Confetti
 function fireConfetti(){confetti({particleCount:100,spread:70,origin:{y:0.6}});}
 
-// Roulette setup
-const segments=[ // more realistic 18 red / 18 black / 1 green
-  {color:'green',label:'0'},
-  {color:'red',label:'1'},{color:'black',label:'2'},
-  {color:'red',label:'3'},{color:'black',label:'4'},
-  {color:'red',label:'5'},{color:'black',label:'6'},
-  {color:'red',label:'7'},{color:'black',label:'8'},
-  {color:'red',label:'9'},{color:'black',label:'10'},
-  {color:'red',label:'11'},{color:'black',label:'12'},
-  {color:'red',label:'13'},{color:'black',label:'14'},
-  {color:'red',label:'15'},{color:'black',label:'16'},
-  {color:'red',label:'17'},{color:'black',label:'18'},
-  {color:'red',label:'19'},{color:'black',label:'20'},
-  {color:'red',label:'21'},{color:'black',label:'22'},
-  {color:'red',label:'23'},{color:'black',label:'24'},
-  {color:'red',label:'25'},{color:'black',label:'26'},
-  {color:'red',label:'27'},{color:'black',label:'28'},
-  {color:'red',label:'29'},{color:'black',label:'30'},
-  {color:'red',label:'31'},{color:'black',label:'32'},
-  {color:'red',label:'33'},{color:'black',label:'34'},
-  {color:'red',label:'35'},{color:'black',label:'36'}
-];
+// Roulette segments 18 red, 18 black, 1 green
+const segments=[ {color:'green',label:'0'} ];
+for(let i=1;i<=36;i++){ segments.push({color:(i%2===0?'black':'red'),label:i.toString()}); }
 
 function drawWheel(rotation=0){
   currentRotation=rotation;
   const cx=rouletteCanvas.width/2, cy=rouletteCanvas.height/2, radius=cx-10;
   ctx.clearRect(0,0,rouletteCanvas.width,rouletteCanvas.height);
   const arc=(2*Math.PI)/segments.length;
-
   segments.forEach((seg,i)=>{
     ctx.beginPath();
     ctx.moveTo(cx,cy);
@@ -181,7 +154,6 @@ function drawWheel(rotation=0){
     ctx.fillText(seg.label,radius-10,6);
     ctx.restore();
   });
-
   // Arrow
   ctx.beginPath();
   ctx.moveTo(cx-20,12);
@@ -190,7 +162,6 @@ function drawWheel(rotation=0){
   ctx.fillStyle='gray';
   ctx.shadowBlur=6;
   ctx.fill();
-
   // Inner circle
   ctx.beginPath();
   ctx.arc(cx,cy,radius*0.15,0,2*Math.PI);
@@ -198,40 +169,22 @@ function drawWheel(rotation=0){
   ctx.fill();
 }
 
-function rouletteWinCheck(finalRotation,colorBet){
-  const arc=(2*Math.PI)/segments.length;
-  const idx=Math.floor(((2*Math.PI - (finalRotation%(2*Math.PI)))% (2*Math.PI))/arc);
-  return segments[idx].color.toLowerCase()===colorBet.toLowerCase();
-}
-
-function spinRoulette(colorBet,player,betAmount){
+// Pre-guessed spin
+function spinRoulette(colorBet, player, betAmount){
   return new Promise(resolve=>{
-    const targetIdx=Math.floor(Math.random()*segments.length);
-    const totalRotation=2*Math.PI*8 + targetIdx*(2*Math.PI/segments.length);
+    const targetIdx = Math.floor(Math.random()*segments.length); // pre-picked segment
+    const won = segments[targetIdx].color.toLowerCase() === colorBet.toLowerCase();
+    const totalRotation = 2*Math.PI*8 + targetIdx*(2*Math.PI/segments.length); // spin to target
     anime({
       targets:{rot:0},
       rot:totalRotation,
       easing:'easeOutCubic',
       duration:3500,
-      update:function(a){drawWheel(a.animations[0].currentValue);},
-      complete:function(){resolve(rouletteWinCheck(totalRotation,colorBet));}
+      update: function(a){ drawWheel(a.animations[0].currentValue); },
+      complete: function(){ resolve(won); }
     });
   });
 }
-
-// Play button
-document.getElementById('playBtn').addEventListener('click', async ()=>{
-  const player=document.getElementById('playerName').value.trim();
-  const betAmount=parseInt(document.getElementById('betAmount').value);
-  if(!player||isNaN(betAmount)||betAmount<1){resultDiv.className='lose';resultDiv.textContent='Enter valid player and bet';return;}
-  const game=gameSelect.value;
-  resultDiv.className='';resultDiv.textContent='Playing...';
-  if(game==='roulette'){
-    const colorBet=document.getElementById('colorBet').value;
-    const won=await spinRoulette(colorBet,player,betAmount);
-    showResult(won,player,betAmount);
-  }
-});
 
 function showResult(won,player,betAmount){
   resultDiv.className='';
@@ -246,6 +199,17 @@ function showResult(won,player,betAmount){
     historyDiv.innerHTML=`${player} lost ${betAmount}<br>`+historyDiv.innerHTML;
   }
 }
+
+// Play button
+document.getElementById('playBtn').addEventListener('click', async ()=>{
+  const player=document.getElementById('playerName').value.trim();
+  const betAmount=parseInt(document.getElementById('betAmount').value);
+  if(!player||isNaN(betAmount)||betAmount<1){resultDiv.className='lose';resultDiv.textContent='Enter valid player and bet';return;}
+  resultDiv.className='';resultDiv.textContent='Playing...';
+  const colorBet=document.getElementById('colorBet').value;
+  const won=await spinRoulette(colorBet,player,betAmount);
+  showResult(won,player,betAmount);
+});
 
 // Initial draw
 drawWheel();
