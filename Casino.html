@@ -69,7 +69,7 @@ button:hover{transform:scale(1.05);}
 }
 .win { background:linear-gradient(90deg,#00ff66,#00cc00); color:#000; text-shadow:0 0 6px #00ff66; }
 .lose { background:linear-gradient(90deg,#ff3333,#aa0000); color:#fff; text-shadow:0 0 6px #ff3333; }
-canvas { width:100%; height:auto; border-radius:12px; margin-top:10px; background: radial-gradient(circle at center, #2a002a 0%, #1b0d1b 100%); }
+canvas { width:100%; height:auto; border-radius:12px; margin-top:10px; background: radial-gradient(circle at center, #2a002a 0%, #1b0d1b 100%); display:block; }
 .history { margin-top:10px; font-size:0.85rem; color:#ccc; max-height:150px; overflow-y:auto; border-top:1px solid #444; padding-top:5px; }
 </style>
 </head>
@@ -110,44 +110,53 @@ canvas { width:100%; height:auto; border-radius:12px; margin-top:10px; backgroun
 <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 <script>
-// Utilities
+// Utils
 const resultDiv=document.getElementById('result');
 const historyDiv=document.getElementById('history');
 const rouletteCanvas=document.getElementById('rouletteWheel');
 const ctx=rouletteCanvas.getContext('2d');
 let currentRotation=0;
 
-// Resize canvas to match CSS
+// Resize canvas
 function resizeCanvas(){
-  rouletteCanvas.width = rouletteCanvas.offsetWidth;
-  rouletteCanvas.height = rouletteCanvas.offsetWidth;
+  const rect = rouletteCanvas.getBoundingClientRect();
+  rouletteCanvas.width = rect.width;
+  rouletteCanvas.height = rect.width; // square canvas
 }
 window.addEventListener('resize',()=>{resizeCanvas(); drawWheel(currentRotation);});
 resizeCanvas();
 
-// Confetti
-function fireConfetti(){confetti({particleCount:100,spread:70,origin:{y:0.6}});}
+// Confetti - uses dedicated canvas to prevent overlay issues
+const confettiCanvas = document.createElement('canvas');
+confettiCanvas.style.position = 'absolute';
+confettiCanvas.style.pointerEvents = 'none';
+confettiCanvas.style.top = '0';
+confettiCanvas.style.left = '0';
+confettiCanvas.style.width = '100%';
+confettiCanvas.style.height = '100%';
+document.body.appendChild(confettiCanvas);
+const confettiInstance = confetti.create(confettiCanvas,{resize:true,useWorker:true});
+function fireConfetti(){confettiInstance({particleCount:100,spread:70,origin:{y:0.6}});}
 
-// Roulette segments 18 red / 18 black / 1 green
+// Roulette segments: 18 red, 18 black, 1 green
 const segments=[{color:'green',label:'0'}];
 for(let i=1;i<=36;i++){segments.push({color:i%2===0?'black':'red',label:i.toString()});}
 
-// Draw the roulette wheel
+// Draw wheel
 function drawWheel(rotation=0){
-  resizeCanvas(); // Fix for zoom bug
+  resizeCanvas(); // always sync
   currentRotation=rotation;
   const cx=rouletteCanvas.width/2;
   const cy=rouletteCanvas.height/2;
   const radius=cx-10;
   const arc=(2*Math.PI)/segments.length;
-
   ctx.clearRect(0,0,rouletteCanvas.width,rouletteCanvas.height);
 
   segments.forEach((seg,i)=>{
     ctx.beginPath();
     ctx.moveTo(cx,cy);
     ctx.arc(cx,cy,radius,i*arc+rotation,(i+1)*arc+rotation);
-    ctx.fillStyle=seg.color;
+    ctx.fillStyle = seg.color;
     ctx.shadowColor="#fff";
     ctx.shadowBlur=5;
     ctx.fill();
@@ -181,7 +190,7 @@ function drawWheel(rotation=0){
 // Pre-guessed spin
 function spinRoulette(colorBet, player, betAmount){
   return new Promise(resolve=>{
-    const targetIdx=Math.floor(Math.random()*segments.length); // pre-picked segment
+    const targetIdx=Math.floor(Math.random()*segments.length);
     const won = segments[targetIdx].color.toLowerCase()===colorBet.toLowerCase();
     const totalRotation=2*Math.PI*8+targetIdx*(2*Math.PI/segments.length);
 
@@ -196,7 +205,7 @@ function spinRoulette(colorBet, player, betAmount){
   });
 }
 
-// Show win/lose
+// Show result
 function showResult(won,player,betAmount){
   resultDiv.className='';
   if(won){
@@ -204,7 +213,7 @@ function showResult(won,player,betAmount){
     resultDiv.innerHTML=`🎉 WIN! <br>Use this command:<br><b>/pay ${player} ${betAmount*2}</b>`;
     fireConfetti();
     historyDiv.innerHTML=`${player} won ${betAmount*2}<br>`+historyDiv.innerHTML;
-  } else {
+  }else{
     resultDiv.className='lose';
     resultDiv.innerHTML=`💀 LOSE! <br>Do NOT pay the player`;
     historyDiv.innerHTML=`${player} lost ${betAmount}<br>`+historyDiv.innerHTML;
