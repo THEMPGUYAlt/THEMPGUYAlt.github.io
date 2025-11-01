@@ -123,7 +123,6 @@ canvas { width:100%; height:auto; border-radius:12px; margin-top:10px; backgroun
 </main>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 <script>
 // --- Utils ---
 const resultDiv=document.getElementById('result');
@@ -153,19 +152,6 @@ window.addEventListener('resize',()=>{
 resizeCanvas(rouletteCanvas);
 resizeCanvas(bjCanvas);
 
-// --- Confetti (dedicated canvas) ---
-const confettiCanvas=document.createElement('canvas');
-confettiCanvas.style.position='absolute';
-confettiCanvas.style.pointerEvents='none';
-confettiCanvas.style.top='0';
-confettiCanvas.style.left='0';
-confettiCanvas.width=window.innerWidth;
-confettiCanvas.height=window.innerHeight;
-document.body.appendChild(confettiCanvas);
-const confettiInstance=confetti.create(confettiCanvas,{resize:true,useWorker:true});
-function fireConfetti(){ confettiInstance({particleCount:100,spread:70,origin:{y:0.6}}); }
-window.addEventListener('resize',()=>{ confettiCanvas.width=window.innerWidth; confettiCanvas.height=window.innerHeight; });
-
 // --- Roulette ---
 const segments=[{color:'green',label:'0'}];
 for(let i=1;i<=36;i++){segments.push({color:i%2===0?'black':'red',label:i.toString()});}
@@ -180,13 +166,12 @@ function drawWheel(rotation=0){
   segments.forEach((seg,i)=>{
     ctx.beginPath();ctx.moveTo(cx,cy);
     ctx.arc(cx,cy,radius,i*arc+rotation,(i+1)*arc+rotation);
-    ctx.fillStyle=seg.color;ctx.shadowColor="#fff";ctx.shadowBlur=5;ctx.fill();
+    ctx.fillStyle=seg.color;ctx.fill();
     ctx.save();ctx.translate(cx,cy);ctx.rotate(i*arc+arc/2+rotation);
     ctx.fillStyle='gold';ctx.textAlign='right';ctx.font='bold 16px sans-serif';
     ctx.fillText(seg.label,radius-10,6);ctx.restore();
   });
-  ctx.beginPath();ctx.moveTo(cx-20,12);ctx.lineTo(cx+20,12);ctx.lineTo(cx,40);
-  ctx.fillStyle='gray';ctx.shadowBlur=6;ctx.fill();
+  ctx.beginPath();ctx.moveTo(cx-20,12);ctx.lineTo(cx+20,12);ctx.lineTo(cx,40);ctx.fillStyle='gray';ctx.fill();
   ctx.beginPath();ctx.arc(cx,cy,radius*0.15,0,2*Math.PI);ctx.fillStyle='rgba(255,255,255,0.2)';ctx.fill();
 }
 
@@ -204,9 +189,10 @@ async function spinRoulette(colorBet,player,betAmount){
 
 // --- Coin Flip ---
 async function flipCoin(player,betAmount){
-  const choice=Math.random()<0.5?'heads':'tails';
+  let count=0;
   return new Promise(res=>{
-    let count=0; const interval=setInterval(()=>{
+    const choice=Math.random()<0.5?'heads':'tails';
+    const interval=setInterval(()=>{
       resultDiv.textContent=Math.random()<0.5?'🪙 Heads':'🪙 Tails';
       count++; if(count>10){clearInterval(interval);res(choice==='heads');}
     },80);
@@ -216,10 +202,11 @@ async function flipCoin(player,betAmount){
 // --- Dice ---
 async function rollDice(player,betAmount){
   return new Promise(res=>{
-    let count=0; const interval=setInterval(()=>{
+    let count=0;
+    const interval=setInterval(()=>{
       const val=Math.floor(Math.random()*6)+1;
-      resultDiv.textContent=`🎲 Dice: ${val}`; count++;
-      if(count>10){clearInterval(interval);res(val>=4);}
+      resultDiv.textContent=`🎲 Dice: ${val}`;
+      count++; if(count>10){clearInterval(interval);res(val>=4);}
     },80);
   });
 }
@@ -248,12 +235,12 @@ function startBlackjack(player,betAmount){createDeck();playerCards=[deck.pop(),d
 hitBtn.onclick=()=>{playerCards.push(deck.pop());renderBlackjack();if(handValue(playerCards)>21)endBlackjack(false,player,betAmount);}
 standBtn.onclick=()=>{while(handValue(dealerCards)<17){dealerCards.push(deck.pop());renderBlackjack();}
 const win=handValue(playerCards)<=21&&(handValue(playerCards)>handValue(dealerCards)||handValue(dealerCards)>21);endBlackjack(win,player,betAmount);}}
-function endBlackjack(win,player,betAmount){hitBtn.disabled=true;standBtn.disabled=true;if(win){resultDiv.className='win';resultDiv.innerHTML=`🎉 WIN! /pay ${player} ${betAmount*2}`;fireConfetti();historyDiv.innerHTML=`${player} won ${betAmount*2}<br>`+historyDiv.innerHTML;}else{resultDiv.className='lose';resultDiv.innerHTML=`💀 LOSE! Do NOT pay`;historyDiv.innerHTML=`${player} lost ${betAmount}<br>`+historyDiv.innerHTML;}}
+function endBlackjack(win,player,betAmount){hitBtn.disabled=true;standBtn.disabled=true;if(win){resultDiv.className='win';resultDiv.innerHTML=`🎉 WIN! /pay ${player} ${betAmount*2}`; historyDiv.innerHTML=`${player} won ${betAmount*2}<br>`+historyDiv.innerHTML;}else{resultDiv.className='lose';resultDiv.innerHTML=`💀 LOSE! Do NOT pay`; historyDiv.innerHTML=`${player} lost ${betAmount}<br>`+historyDiv.innerHTML;}}
 
 // --- Show Result ---
 function showResult(won,player,betAmount){
   resultDiv.className='';
-  if(won){resultDiv.className='win';resultDiv.innerHTML=`🎉 WIN! <br>Use: <b>/pay ${player} ${betAmount*2}</b>`; fireConfetti(); historyDiv.innerHTML=`${player} won ${betAmount*2}<br>`+historyDiv.innerHTML;}
+  if(won){resultDiv.className='win';resultDiv.innerHTML=`🎉 WIN! <br>Use: <b>/pay ${player} ${betAmount*2}</b>`; historyDiv.innerHTML=`${player} won ${betAmount*2}<br>`+historyDiv.innerHTML;}
   else{resultDiv.className='lose';resultDiv.innerHTML=`💀 LOSE! <br>Do NOT pay`; historyDiv.innerHTML=`${player} lost ${betAmount}<br>`+historyDiv.innerHTML;}
 }
 
