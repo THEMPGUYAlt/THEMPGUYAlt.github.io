@@ -100,6 +100,7 @@ canvas {
   height:auto;
   border-radius:12px;
   margin-top:10px;
+  background: radial-gradient(circle at center, #2a002a 0%, #1b0d1b 100%);
 }
 .history {
   margin-top:10px;
@@ -207,6 +208,8 @@ function drawWheel(rotation=0){
   const cx=rouletteCanvas.width/2, cy=rouletteCanvas.height/2, radius=cx-10;
   ctx.clearRect(0,0,rouletteCanvas.width,rouletteCanvas.height);
   const arc=(2*Math.PI)/segments.length;
+
+  // Draw each segment
   segments.forEach((seg,i)=>{
     ctx.beginPath();
     ctx.moveTo(cx,cy);
@@ -218,28 +221,45 @@ function drawWheel(rotation=0){
     ctx.rotate(i*arc+arc/2+rotation);
     ctx.fillStyle='gold';
     ctx.textAlign='right';
-    ctx.font='bold 16px sans-serif';
+    ctx.font='bold 18px sans-serif';
     ctx.fillText(seg.label,radius-10,6);
     ctx.restore();
   });
-  // Gray arrow
+
+  // Draw arrow
   ctx.beginPath();
-  ctx.moveTo(cx-12,12);
-  ctx.lineTo(cx+12,12);
+  ctx.moveTo(cx-15,12);
+  ctx.lineTo(cx+15,12);
   ctx.lineTo(cx,35);
   ctx.fillStyle='gray';
   ctx.fill();
+
+  // Inner circle highlight
+  ctx.beginPath();
+  ctx.arc(cx,cy,radius*0.2,0,2*Math.PI);
+  ctx.fillStyle='rgba(255,255,255,0.1)';
+  ctx.fill();
 }
 
-function rouletteWinCheck(targetIdx, colorBet){
-  return segments[targetIdx].color.toLowerCase() === colorBet.toLowerCase();
+function rouletteWinCheck(finalRotation, colorBet){
+  const arc=(2*Math.PI)/segments.length;
+  // Find segment under arrow (top of wheel)
+  const idx=Math.floor(((2*Math.PI - (finalRotation % (2*Math.PI))) % (2*Math.PI)) / arc);
+  return segments[idx].color.toLowerCase()===colorBet.toLowerCase();
 }
 
 function spinRoulette(colorBet, player, betAmount){
   return new Promise(resolve=>{
     const targetIdx=Math.floor(Math.random()*segments.length);
     const totalRotation=2*Math.PI*8 + targetIdx*(2*Math.PI/segments.length);
-    anime({targets:{rot:0}, rot:totalRotation, easing:'easeOutCubic', duration:3500, update:function(a){drawWheel(a.animations[0].currentValue);}, complete:function(){resolve(rouletteWinCheck(targetIdx,colorBet));}});
+    anime({
+      targets:{rot:0},
+      rot:totalRotation,
+      easing:'easeOutCubic',
+      duration:3500,
+      update:function(a){drawWheel(a.animations[0].currentValue);},
+      complete:function(){resolve(rouletteWinCheck(totalRotation,colorBet));}
+    });
   });
 }
 
