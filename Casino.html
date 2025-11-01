@@ -110,33 +110,39 @@ canvas { width:100%; height:auto; border-radius:12px; margin-top:10px; backgroun
 <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 <script>
-// Utils
+// Utilities
 const resultDiv=document.getElementById('result');
 const historyDiv=document.getElementById('history');
 const rouletteCanvas=document.getElementById('rouletteWheel');
 const ctx=rouletteCanvas.getContext('2d');
-const gameSelect=document.getElementById('gameSelect');
 let currentRotation=0;
 
-function resizeCanvas(canvas){
-  canvas.width=canvas.offsetWidth;
-  canvas.height=canvas.offsetWidth;
+// Resize canvas to match CSS
+function resizeCanvas(){
+  rouletteCanvas.width = rouletteCanvas.offsetWidth;
+  rouletteCanvas.height = rouletteCanvas.offsetWidth;
 }
-window.addEventListener('resize',()=>{resizeCanvas(rouletteCanvas); drawWheel(currentRotation);});
-resizeCanvas(rouletteCanvas);
+window.addEventListener('resize',()=>{resizeCanvas(); drawWheel(currentRotation);});
+resizeCanvas();
 
 // Confetti
 function fireConfetti(){confetti({particleCount:100,spread:70,origin:{y:0.6}});}
 
-// Roulette segments 18 red, 18 black, 1 green
-const segments=[ {color:'green',label:'0'} ];
-for(let i=1;i<=36;i++){ segments.push({color:(i%2===0?'black':'red'),label:i.toString()}); }
+// Roulette segments 18 red / 18 black / 1 green
+const segments=[{color:'green',label:'0'}];
+for(let i=1;i<=36;i++){segments.push({color:i%2===0?'black':'red',label:i.toString()});}
 
+// Draw the roulette wheel
 function drawWheel(rotation=0){
+  resizeCanvas(); // Fix for zoom bug
   currentRotation=rotation;
-  const cx=rouletteCanvas.width/2, cy=rouletteCanvas.height/2, radius=cx-10;
-  ctx.clearRect(0,0,rouletteCanvas.width,rouletteCanvas.height);
+  const cx=rouletteCanvas.width/2;
+  const cy=rouletteCanvas.height/2;
+  const radius=cx-10;
   const arc=(2*Math.PI)/segments.length;
+
+  ctx.clearRect(0,0,rouletteCanvas.width,rouletteCanvas.height);
+
   segments.forEach((seg,i)=>{
     ctx.beginPath();
     ctx.moveTo(cx,cy);
@@ -145,6 +151,7 @@ function drawWheel(rotation=0){
     ctx.shadowColor="#fff";
     ctx.shadowBlur=5;
     ctx.fill();
+
     ctx.save();
     ctx.translate(cx,cy);
     ctx.rotate(i*arc+arc/2+rotation);
@@ -154,6 +161,7 @@ function drawWheel(rotation=0){
     ctx.fillText(seg.label,radius-10,6);
     ctx.restore();
   });
+
   // Arrow
   ctx.beginPath();
   ctx.moveTo(cx-20,12);
@@ -162,6 +170,7 @@ function drawWheel(rotation=0){
   ctx.fillStyle='gray';
   ctx.shadowBlur=6;
   ctx.fill();
+
   // Inner circle
   ctx.beginPath();
   ctx.arc(cx,cy,radius*0.15,0,2*Math.PI);
@@ -172,20 +181,22 @@ function drawWheel(rotation=0){
 // Pre-guessed spin
 function spinRoulette(colorBet, player, betAmount){
   return new Promise(resolve=>{
-    const targetIdx = Math.floor(Math.random()*segments.length); // pre-picked segment
-    const won = segments[targetIdx].color.toLowerCase() === colorBet.toLowerCase();
-    const totalRotation = 2*Math.PI*8 + targetIdx*(2*Math.PI/segments.length); // spin to target
+    const targetIdx=Math.floor(Math.random()*segments.length); // pre-picked segment
+    const won = segments[targetIdx].color.toLowerCase()===colorBet.toLowerCase();
+    const totalRotation=2*Math.PI*8+targetIdx*(2*Math.PI/segments.length);
+
     anime({
       targets:{rot:0},
       rot:totalRotation,
       easing:'easeOutCubic',
       duration:3500,
-      update: function(a){ drawWheel(a.animations[0].currentValue); },
-      complete: function(){ resolve(won); }
+      update:function(a){drawWheel(a.animations[0].currentValue);},
+      complete:function(){resolve(won);}
     });
   });
 }
 
+// Show win/lose
 function showResult(won,player,betAmount){
   resultDiv.className='';
   if(won){
@@ -193,7 +204,7 @@ function showResult(won,player,betAmount){
     resultDiv.innerHTML=`🎉 WIN! <br>Use this command:<br><b>/pay ${player} ${betAmount*2}</b>`;
     fireConfetti();
     historyDiv.innerHTML=`${player} won ${betAmount*2}<br>`+historyDiv.innerHTML;
-  }else{
+  } else {
     resultDiv.className='lose';
     resultDiv.innerHTML=`💀 LOSE! <br>Do NOT pay the player`;
     historyDiv.innerHTML=`${player} lost ${betAmount}<br>`+historyDiv.innerHTML;
