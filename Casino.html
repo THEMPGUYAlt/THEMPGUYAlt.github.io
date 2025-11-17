@@ -2,234 +2,179 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DonutSMP Casino Helper</title>
+<title>🎰 3D Casino Helper</title>
 <style>
-body {margin:0;font-family:'Minecraft',sans-serif;background:#1b0d1b;color:#fff;display:flex;flex-direction:column;align-items:center;min-height:100vh;}
-header {width:100%;padding:15px;text-align:center;background:linear-gradient(90deg,#ff00ff,#6600ff);box-shadow:0 0 20px #ff00ff;}
-h1 {margin:0;color:#fff;text-shadow:0 0 8px #ff00ff,0 0 12px #6600ff;}
-.owner {margin-top:4px;color:#00ffcc;font-weight:700;}
-main {width:100%;max-width:1200px;padding:10px;display:flex;flex-wrap:wrap;gap:15px;justify-content:center;}
-.game-card {background:rgba(255,255,255,0.05);padding:15px;border-radius:12px;flex:1 1 320px;min-width:280px;position:relative;box-shadow:0 0 20px rgba(0,0,0,0.4);transition:all 0.3s;}
-.game-card:hover{transform:scale(1.03);box-shadow:0 0 40px #ff00ff;}
-input,select{padding:6px 10px;border-radius:6px;border:none;margin:4px 0;width:100%;background:rgba(255,255,255,0.1);color:#fff;}
-input::placeholder{color:#ccc;}
-button{background:linear-gradient(90deg,#ffd700,#ffae00);border:none;padding:8px 14px;border-radius:10px;font-weight:800;cursor:pointer;margin-top:6px;width:100%;transition:all 0.2s;}
-button:hover{transform:scale(1.05);}
-#result{margin-top:12px;font-weight:800;word-break:break-word;padding:10px;border-radius:6px;text-align:center;font-size:1.1rem;}
-.win{background:linear-gradient(90deg,#00ff66,#00cc00);color:#000;text-shadow:0 0 6px #00ff66;}
-.lose{background:linear-gradient(90deg,#ff3333,#aa0000);color:#fff;text-shadow:0 0 6px #ff3333;}
-canvas{width:100%;height:auto;border-radius:12px;margin-top:10px;background:radial-gradient(circle at center,#2a002a 0%,#1b0d1b 100%);display:block;}
-.history{margin-top:10px;font-size:0.85rem;color:#ccc;max-height:150px;overflow-y:auto;border-top:1px solid #444;padding-top:5px;}
+/* General */
+body {
+    margin:0; padding:0;
+    font-family: 'Segoe UI', sans-serif;
+    background: radial-gradient(circle at top, #111 0%, #222 100%);
+    color: #fff;
+    text-align: center;
+}
+h1,h2 { margin: 10px 0; color: #ffcc00; text-shadow: 2px 2px 5px #000; }
+
+/* Owner Login */
+#ownerPrompt {
+    position: fixed; top:0; left:0; width:100%; height:100%;
+    background: rgba(0,0,0,0.95); display:flex;
+    flex-direction:column; justify-content:center; align-items:center;
+    z-index:9999;
+}
+#ownerPrompt input {
+    padding: 10px; font-size:18px; width:200px; margin-top:10px;
+}
+#ownerPrompt button {
+    padding:10px 20px; font-size:16px; margin-top:10px;
+}
+
+/* Container */
+.container { padding: 20px; }
+#ownerName { font-size: 24px; margin-bottom:20px; }
+
+/* Games */
+.game { margin: 30px auto; padding:20px; border-radius:15px; background: linear-gradient(145deg,#333,#111); width:300px; box-shadow: 5px 5px 20px #000; }
+button { padding: 10px 20px; margin:5px; border:none; border-radius:10px; cursor:pointer; font-weight:bold; color:#fff; background: linear-gradient(45deg,#ff9900,#ffcc00); transition:0.3s; }
+button:hover { transform: scale(1.1); }
+
+/* Result */
+#result { margin-top:20px; font-size:20px; text-shadow:1px 1px 3px #000; }
+
+/* History */
+#history { margin-top:20px; max-height:200px; overflow-y:auto; border-top:1px solid #555; padding-top:10px; text-align:left; width:80%; margin-left:auto;margin-right:auto; }
+.win { color:#0f0; }
+.lose { color:#f00; }
+ul { list-style:none; padding:0; }
+
+/* Roulette Wheel */
+#wheel {
+    width: 200px; height: 200px; margin: 20px auto;
+    border-radius: 50%; border: 10px solid #555;
+    background: conic-gradient(red 0deg 180deg, black 180deg 360deg);
+    position: relative;
+    box-shadow: 0 0 20px #000 inset;
+    transform: rotate(0deg);
+    transition: transform 3s cubic-bezier(0.33, 1, 0.68, 1);
+}
+#wheel::after {
+    content:'▲'; position:absolute; top:-20px; left:50%; transform:translateX(-50%); font-size:24px; color:#fff;
+}
 </style>
 </head>
 <body>
 
-<header>
-  <h1>🎰 DonutSMP Casino Helper</h1>
-  <div class="owner">Owner: <span id="ownerName">robisrobot</span></div>
-</header>
+<!-- Owner Prompt -->
+<div id="ownerPrompt">
+    <h1>Enter Casino Owner IGN</h1>
+    <input type="text" id="ownerInput" placeholder="Your IGN">
+    <button onclick="setOwner()">Enter</button>
+</div>
 
-<main>
-  <div class="game-card">
-    <label>Player Name</label>
-    <input id="playerName" placeholder="Minecraft Username">
-    <label>Bet Amount</label>
-    <input id="betAmount" type="number" placeholder="Amount" min="1">
-    <label>Choose Game</label>
-    <select id="gameSelect">
-      <option value="roulette">🎡 Roulette</option>
-      <option value="coin">🪙 Coin Flip</option>
-      <option value="dice">🎲 Dice</option>
-      <option value="slots">🎰 Slots</option>
-      <option value="blackjack">🃏 Blackjack</option>
-    </select>
+<div class="container" id="mainContent" style="display:none;">
+    <div id="ownerName"></div>
 
-    <div id="colorChoice" style="display:block;">
-      <label>Choose Color</label>
-      <select id="colorBet">
-        <option value="red">🔴 Red</option>
-        <option value="black">⚫ Black</option>
-        <option value="green">🟢 Green</option>
-      </select>
+    <!-- Dice Game -->
+    <div class="game">
+        <h2>🎲 Dice Game (1-6)</h2>
+        <input type="number" id="diceBet" min="1" max="6" placeholder="Your number">
+        <button onclick="rollDice()">Roll Dice</button>
     </div>
 
-    <button id="playBtn">Play</button>
+    <!-- Coin Flip -->
+    <div class="game">
+        <h2>🪙 Coin Flip</h2>
+        <button onclick="flipCoin('Heads')">Heads</button>
+        <button onclick="flipCoin('Tails')">Tails</button>
+    </div>
+
+    <!-- Roulette -->
+    <div class="game">
+        <h2>🎡 Roulette</h2>
+        <input type="text" id="rouletteBet" placeholder="Number 0-36 or Red/Black">
+        <button onclick="spinRoulette()">Spin Wheel</button>
+        <div id="wheel"></div>
+    </div>
+
+    <!-- Card Draw -->
+    <div class="game">
+        <h2>🃏 Card Draw</h2>
+        <input type="text" id="cardSuit" maxlength="1" placeholder="♠ ♥ ♦ ♣">
+        <input type="text" id="cardRank" maxlength="2" placeholder="A,2-10,J,Q,K">
+        <button onclick="drawCard()">Draw Card</button>
+    </div>
+
     <div id="result"></div>
-    <div class="history" id="history"></div>
-  </div>
 
-  <div class="game-card" id="wheelCard">
-    <canvas id="rouletteWheel"></canvas>
-  </div>
-
-  <div class="game-card" id="blackjackCard" style="display:none;">
-    <canvas id="blackjackCanvas"></canvas>
-    <div style="margin-top:10px;">
-      <button id="hitBtn" disabled>Hit</button>
-      <button id="standBtn" disabled>Stand</button>
+    <div id="history">
+        <h3>History</h3>
+        <ul id="historyList"></ul>
     </div>
-  </div>
-</main>
+</div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
 <script>
-// --- Utils ---
-const resultDiv=document.getElementById('result');
-const historyDiv=document.getElementById('history');
-const wheelCard=document.getElementById('wheelCard');
-const colorChoice=document.getElementById('colorChoice');
-const rouletteCanvas=document.getElementById('rouletteWheel');
-const ctx=rouletteCanvas.getContext('2d');
-const blackjackCard=document.getElementById('blackjackCard');
-const bjCanvas=document.getElementById('blackjackCanvas');
-const bjCtx=bjCanvas.getContext('2d');
-const hitBtn=document.getElementById('hitBtn');
-const standBtn=document.getElementById('standBtn');
-const gameSelect=document.getElementById('gameSelect');
-let currentRotation=0;
+let owner = '';
 
-// --- Resize ---
-function resizeCanvas(canvas){
-  const rect=canvas.getBoundingClientRect();
-  canvas.width=rect.width;
-  canvas.height=rect.width;
-}
-window.addEventListener('resize',()=>{
-  resizeCanvas(rouletteCanvas); drawWheel(currentRotation);
-  resizeCanvas(bjCanvas); renderBlackjack();
-});
-resizeCanvas(rouletteCanvas);
-resizeCanvas(bjCanvas);
-
-// --- Roulette ---
-const segments=[{color:'green',label:'0'}];
-for(let i=1;i<=36;i++){segments.push({color:i%2===0?'black':'red',label:i.toString()});}
-
-function drawWheel(rotation=0){
-  const cx=rouletteCanvas.width/2,cy=rouletteCanvas.height/2;
-  const radius=cx-10;
-  const arc=(2*Math.PI)/segments.length;
-  ctx.clearRect(0,0,rouletteCanvas.width,rouletteCanvas.height);
-  segments.forEach((seg,i)=>{
-    ctx.beginPath();
-    ctx.moveTo(cx,cy);
-    ctx.arc(cx,cy,radius,i*arc+rotation,(i+1)*arc+rotation);
-    ctx.fillStyle=seg.color;
-    ctx.fill();
-    ctx.save();
-    ctx.translate(cx,cy);
-    ctx.rotate(i*arc+arc/2+rotation);
-    ctx.fillStyle='gold';
-    ctx.textAlign='right';
-    ctx.font='bold 16px sans-serif';
-    ctx.fillText(seg.label,radius-10,6);
-    ctx.restore();
-  });
-  // arrow
-  ctx.beginPath();
-  ctx.moveTo(cx-20,12);
-  ctx.lineTo(cx+20,12);
-  ctx.lineTo(cx,40);
-  ctx.fillStyle='gray';
-  ctx.fill();
+function setOwner() {
+    const val = document.getElementById('ownerInput').value.trim();
+    if(!val) { alert('Enter your IGN!'); return; }
+    owner = val;
+    document.getElementById('ownerPrompt').style.display='none';
+    document.getElementById('mainContent').style.display='block';
+    document.getElementById('ownerName').innerText = `🎩 Casino Owner: ${owner}`;
 }
 
-async function spinRoulette(colorBet,player,betAmount){
-  // Pre-choose a winning segment for the spin
-  const possibleIndices = segments.map((s,i)=>({s,i})).filter(x=>x.s.color.toLowerCase()===colorBet.toLowerCase());
-  const winningIndex = possibleIndices.length>0 ? possibleIndices[Math.floor(Math.random()*possibleIndices.length)] : Math.floor(Math.random()*segments.length);
-  const winningColor = segments[winningIndex.i].color;
-  const won = winningColor.toLowerCase()===colorBet.toLowerCase();
-
-  const totalRotation = 2*Math.PI*8 + winningIndex.i*(2*Math.PI/segments.length);
-  await new Promise(resolve=>{
-    anime({targets:{rot:0},rot:totalRotation,easing:'easeOutCubic',duration:3500,
-      update:function(a){ drawWheel(a.animations[0].currentValue); },complete:resolve });
-  });
-  return won;
+// Dice
+function rollDice() {
+    const bet = parseInt(document.getElementById('diceBet').value);
+    if (!bet || bet<1||bet>6){ alert("Enter 1-6"); return;}
+    const roll = Math.floor(Math.random()*6)+1;
+    const win = bet===roll;
+    showResult(`🎲 Rolled: ${roll} - ${win?"You win!":"You lose!"}`,win);
 }
 
-// --- Coin ---
-async function flipCoin(player,betAmount){
-  let count=0;
-  return new Promise(res=>{
-    const choice=Math.random()<0.5?'heads':'tails';
-    const interval=setInterval(()=>{
-      resultDiv.textContent=Math.random()<0.5?'🪙 Heads':'🪙 Tails';
-      count++; if(count>10){clearInterval(interval);res(choice==='heads');}
-    },80);
-  });
+// Coin
+function flipCoin(choice){
+    const outcome = Math.random()<0.5?'Heads':'Tails';
+    const win = choice===outcome;
+    showResult(`🪙 Coin: ${outcome} - ${win?"You win!":"You lose!"}`,win);
 }
 
-// --- Dice ---
-async function rollDice(player,betAmount){
-  return new Promise(res=>{
-    let count=0;
-    const interval=setInterval(()=>{
-      const val=Math.floor(Math.random()*6)+1;
-      resultDiv.textContent=`🎲 Dice: ${val}`;
-      count++; if(count>10){clearInterval(interval);res(val>=4);}
-    },80);
-  });
+// Roulette
+function spinRoulette(){
+    const bet = document.getElementById('rouletteBet').value.trim().toLowerCase();
+    const number = Math.floor(Math.random()*37);
+    const redNumbers=[1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36];
+    const color = redNumbers.includes(number)?'red':'black';
+    const win = (bet===number.toString()||bet===color);
+    
+    // Animate wheel spin
+    const wheel = document.getElementById('wheel');
+    const spins = 3 + Math.random()*3; // 3-6 spins
+    const deg = spins*360 + Math.floor(Math.random()*360);
+    wheel.style.transform=`rotate(${deg}deg)`;
+
+    setTimeout(()=>showResult(`🎡 Roulette: ${number} (${color}) - ${win?"You win!":"You lose!"}`,win),3000);
 }
 
-// --- Slots ---
-async function spinSlots(player,betAmount){
-  const symbols=['🍒','🍋','🔔','⭐','💎'];
-  let reels=[0,0,0],count=0;
-  return new Promise(res=>{
-    const interval=setInterval(()=>{
-      reels=reels.map(()=>symbols[Math.floor(Math.random()*symbols.length)]);
-      resultDiv.innerHTML=`🎰 ${reels.join(' | ')}`;
-      count++; if(count>15){clearInterval(interval);res(reels[0]===reels[1]&&reels[1]===reels[2]);}
-    },80);
-  });
+// Card
+function drawCard(){
+    const suits = ['♠','♥','♦','♣'];
+    const ranks = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+    const suit = suits[Math.floor(Math.random()*suits.length)];
+    const rank = ranks[Math.floor(Math.random()*ranks.length)];
+    const betSuit=document.getElementById('cardSuit').value.trim();
+    const betRank=document.getElementById('cardRank').value.trim().toUpperCase();
+    const win = betSuit===suit && betRank===rank;
+    showResult(`🃏 Card Draw: ${rank}${suit} - ${win?"You win!":"You lose!"}`,win);
 }
 
-// --- Blackjack ---
-let deck=[],playerCards=[],dealerCards=[];
-function createDeck(){const suits=['♠','♥','♦','♣'];const ranks=['A','2','3','4','5','6','7','8','9','10','J','Q','K'];deck=[];for(const s of suits){for(const r of ranks){deck.push({suit:s,rank:r});}}for(let i=deck.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[deck[i],deck[j]]=[deck[j],deck[i]];}}
-function drawCard(ctx,card,x,y){ctx.fillStyle='white';ctx.fillRect(x,y,60,90);ctx.fillStyle='black';ctx.font='16px sans-serif';ctx.fillText(card.rank+card.suit,x+5,y+20);ctx.strokeRect(x,y,60,90);}
-function renderBlackjack(){bjCtx.clearRect(0,0,bjCanvas.width,bjCanvas.height);playerCards.forEach((c,i)=>drawCard(bjCtx,c,50+i*70,180));dealerCards.forEach((c,i)=>drawCard(bjCtx,c,50+i*70,20));}
-function cardValue(card){if(['J','Q','K'].includes(card.rank))return 10;if(card.rank==='A')return 11;return parseInt(card.rank);}
-function handValue(cards){let total=cards.reduce((sum,c)=>sum+cardValue(c),0);let aceCount=cards.filter(c=>c.rank==='A').length;while(total>21&&aceCount>0){total-=10;aceCount--;}return total;}
-function startBlackjack(player,betAmount){createDeck();playerCards=[deck.pop(),deck.pop()];dealerCards=[deck.pop(),deck.pop()];renderBlackjack();hitBtn.disabled=false;standBtn.disabled=false;
-hitBtn.onclick=()=>{playerCards.push(deck.pop());renderBlackjack();if(handValue(playerCards)>21)endBlackjack(false,player,betAmount);}
-standBtn.onclick=()=>{while(handValue(dealerCards)<17){dealerCards.push(deck.pop());renderBlackjack();}
-const win=handValue(playerCards)<=21&&(handValue(playerCards)>handValue(dealerCards)||handValue(dealerCards)>21);endBlackjack(win,player,betAmount);}}
-function endBlackjack(win,player,betAmount){hitBtn.disabled=true;standBtn.disabled=true;if(win){resultDiv.className='win';resultDiv.innerHTML=`🎉 WIN! /pay ${player} ${betAmount*2}`; historyDiv.innerHTML=`${player} won ${betAmount*2}<br>`+historyDiv.innerHTML;}else{resultDiv.className='lose';resultDiv.innerHTML=`💀 LOSE! Do NOT pay`; historyDiv.innerHTML=`${player} lost ${betAmount}<br>`+historyDiv.innerHTML;}}
-
-// --- Show Result ---
-function showResult(won,player,betAmount){
-  resultDiv.className='';
-  if(won){resultDiv.className='win';resultDiv.innerHTML=`🎉 WIN! <br>Use: <b>/pay ${player} ${betAmount*2}</b>`; historyDiv.innerHTML=`${player} won ${betAmount*2}<br>`+historyDiv.innerHTML;}
-  else{resultDiv.className='lose';resultDiv.innerHTML=`💀 LOSE! <br>Do NOT pay`; historyDiv.innerHTML=`${player} lost ${betAmount}<br>`+historyDiv.innerHTML;}
+// Result & History
+function showResult(msg,win){
+    document.getElementById('result').innerHTML=`<span class="${win?'win':'lose'}">${msg}</span>`;
+    const li=document.createElement('li');
+    li.innerHTML=`<span class="${win?'win':'lose'}">${msg}</span>`;
+    document.getElementById('historyList').prepend(li);
 }
-
-// --- Game Select ---
-gameSelect.addEventListener('change',()=>{
-  if(gameSelect.value==='roulette'){ wheelCard.style.display='block'; colorChoice.style.display='block'; blackjackCard.style.display='none'; drawWheel();}
-  else if(gameSelect.value==='blackjack'){blackjackCard.style.display='block';wheelCard.style.display='none';colorChoice.style.display='none';}
-  else{wheelCard.style.display='none';colorChoice.style.display='none';blackjackCard.style.display='none';}
-});
-
-// --- Play Button ---
-document.getElementById('playBtn').addEventListener('click', async ()=>{
-  const player=document.getElementById('playerName').value.trim();
-  const betAmount=parseInt(document.getElementById('betAmount').value);
-  if(!player||isNaN(betAmount)||betAmount<1){resultDiv.className='lose';resultDiv.textContent='Enter valid player and bet';return;}
-  const game=gameSelect.value;
-  resultDiv.className='';resultDiv.textContent='Playing...';
-  if(game==='roulette'){const colorBet=document.getElementById('colorBet').value;const won=await spinRoulette(colorBet,player,betAmount);showResult(won,player,betAmount);}
-  else if(game==='coin'){const won=await flipCoin(player,betAmount);showResult(won,player,betAmount);}
-  else if(game==='dice'){const won=await rollDice(player,betAmount);showResult(won,player,betAmount);}
-  else if(game==='slots'){const won=await spinSlots(player,betAmount);showResult(won,player,betAmount);}
-  else if(game==='blackjack'){startBlackjack(player,betAmount);}
-});
-
-// --- Initial ---
-drawWheel();
 </script>
 </body>
 </html>
