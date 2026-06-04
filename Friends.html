@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="windows-1252">
-<title>Idiot!</title>
+<title>Please allow popups if your not a robot.</title>
 <style>
 html, body {
     margin:0; padding:0; width:100%; height:100%; overflow:hidden;
@@ -15,7 +15,6 @@ html, body {
 <script>
 var xOff=5, yOff=5, xPos=400, yPos=-100, flagRun=1;
 
-// -------------------- Popup Test --------------------
 function testPopups(callback) {
     const testCount = 5;
     let testPopups = [];
@@ -29,7 +28,6 @@ function testPopups(callback) {
         } else {
             testPopups.push(p);
             try { p.document.title = "Scanning..."; p.resizeTo(1,1); } catch(e){}
-            // force resize on every attempt
             p.addEventListener('resize', ()=> { try{ p.resizeTo(1,1); p.document.title="Scanning..."; } catch(e){} });
         }
     }
@@ -40,7 +38,6 @@ function testPopups(callback) {
     }, 300);
 }
 
-// -------------------- Open a prank popup --------------------
 function openPopup() {
     const popupWidth = 357, popupHeight = 330;
     let x = Math.random()*(screen.width-popupWidth);
@@ -105,10 +102,7 @@ function openPopup() {
     bounce();
 }
 
-// -------------------- Spawn multiple prank popups --------------------
 function spawnPopups(n){ for(let i=0;i<n;i++) openPopup(); }
-
-// -------------------- Main window bounce --------------------
 function playBall(){ 
     xPos+=xOff;yPos+=yOff;
     if(xPos>screen.width-357)newXlt();
@@ -126,16 +120,14 @@ function altf4key(e){ if(e.keyCode==18||e.keyCode==115){ alert("You are an idiot
 function ctrlwkey(e){ if(e.keyCode==17||e.keyCode==87){ alert("You are an idiot!"); spawnPopups(6); } }
 function delkey(e){ if(e.keyCode==46){ alert("You are an idiot!"); spawnPopups(6); } }
 
-// -------------------- Initialize --------------------
 window.onload = function(){
     const status = document.getElementById("statusText");
 
-    // test popups first
     testPopups((allowed)=>{
         if(!allowed){
             status.innerText="Hmm, please allow popups if you are not a bot and refresh.";
         } else {
-            // hide status and show main GIF
+            document.title = "Idiot!"; 
             status.style.display="none";
             const gif = document.createElement("img");
             gif.id="mainGif";
@@ -143,14 +135,12 @@ window.onload = function(){
             gif.alt="You are an idiot!";
             document.body.appendChild(gif);
 
-            // start prank
             flagRun=1; playBall();
-            spawnPopups(6); // spawn original 6 popups
+            spawnPopups(6);
         }
     });
 };
 
-// -------------------- Confirm before leaving --------------------
 window.addEventListener('beforeunload', function(e){
     e.preventDefault();
     e.returnValue = "Are you an idiot?";
